@@ -1,123 +1,120 @@
 package com.hesky.test.web.rest.product;
 
-import com.hesky.test.util.exception.NotFoundException;
 import com.hesky.test.model.Product;
 import com.hesky.test.service.ProductService;
+import com.hesky.test.web.rest.ProductRestController;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import static com.hesky.test.JsonUtil.getJson;
+import static com.hesky.test.CategoryTestData.DEFAULT_ID;
+import static com.hesky.test.JsonUtil.*;
 import static com.hesky.test.ProductTestData.*;
 import static com.hesky.test.model.BaseEntity.START_SEQ;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
-@WebMvcTest({ProductWithoutCategoryRestController.class})
-public class ProductWithoutCategoryRestControllerUnitTest {
-    private static final String REST_URL = ProductWithoutCategoryRestController.REST_URL + "/";
+@SpringBootTest
+@AutoConfigureMockMvc
+@Sql(scripts = {"classpath:db/data.sql"})
+public class DefaultProductRestControllerIntegrationTest {
+    private static final String REST_URL = ProductRestController.SHORT_REST_URL + "/";
     @Autowired
     private MockMvc mockMvc;
-    @MockBean
+    @Autowired
     private ProductService service;
 
     @Test
     public void testGetAll() throws Exception {
-        List<Product> products = Arrays.asList(NOTEBOOK1, NOTEBOOK2, HARDWARE1, HARDWARE2, HARDWARE3);
-        given(service.getAll()).willReturn(products);
         String json = mockMvc.perform(get(REST_URL))
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
                 .andReturn().getResponse().getContentAsString();
 //        String expected = getJson(mapper,NOTEBOOK1, NOTEBOOK2);
-        String expected = getJson(Arrays.asList(NOTEBOOK1, NOTEBOOK2, HARDWARE1, HARDWARE2, HARDWARE3));
-        JSONAssert.assertEquals(expected, json, false);
+        List<Product> returned = readJsonList(json, Product.class);
+        Assert.assertEquals(service.getAll(DEFAULT_ID), returned);
     }
 
     @Test
     public void testGet() throws Exception {
-        given(service.get(HARDWARE3.getId())).willReturn(HARDWARE3);
-        MvcResult mvcResult = mockMvc.perform(get(REST_URL + HARDWARE3.getId()))
+        MvcResult mvcResult = mockMvc.perform(get(REST_URL + DEFAULT_PRODUCT2.getId()))
                 .andExpect(status().isOk())
                 .andDo(print())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
                 .andReturn();
         String json = mvcResult.getResponse().getContentAsString();
-        String expected = getJson(HARDWARE3);
-        JSONAssert.assertEquals(expected, json, false);
+        Product actual = readJson(json, Product.class);
+        Assert.assertEquals(DEFAULT_PRODUCT2, actual);
     }
 
     @Test
     public void testDelete() throws Exception {
-        mockMvc.perform(delete(REST_URL + HARDWARE1.getId()))
+        mockMvc.perform(delete(REST_URL + DEFAULT_PRODUCT3.getId()))
                 .andExpect(status().isOk())
                 .andDo(print());
-        verify(service, times(1)).delete(HARDWARE1.getId());
+        Assert.assertEquals(Arrays.asList(DEFAULT_PRODUCT1, DEFAULT_PRODUCT2), service.getAll(DEFAULT_ID));
     }
 
     @Test
     public void testUpdate() throws Exception {
-        Product updatedProduct = new Product(NOTEBOOK2);
-        updatedProduct.setName("Updated Asus vivobook 13");
-        mockMvc.perform(put(REST_URL + NOTEBOOK2.getId()) //support with id and without id in object
+        Product updatedProduct = new Product(DEFAULT_PRODUCT2);
+        updatedProduct.setName("Updated");
+        mockMvc.perform(put(REST_URL + DEFAULT_PRODUCT2.getId()) //support with id and without id in object
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(getJson(updatedProduct)))
                 .andDo(print())
                 .andExpect(status().isOk());
-        verify(service, times(1)).update(updatedProduct);
+        Assert.assertEquals(Arrays.asList(DEFAULT_PRODUCT1, updatedProduct, DEFAULT_PRODUCT3), service.getAll(DEFAULT_ID).stream().sorted(Comparator
+                .comparing(Product::getId)).collect(Collectors.toList()));
     }
 
     @Test
     public void testSave() throws Exception {
-        Product product = new Product("Product name", "Product description", 123499);
-        Product savedProduct = new Product(product);
-        savedProduct.setId(HARDWARE3.getId() + 1);
-        given(service.save(product)).willReturn(savedProduct);
-
+        Product actual = new Product("Product name", "Product description", 123499);
         MvcResult mvcResult = mockMvc.perform(post(REST_URL)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(getJson(product)))
+                .content(getJson(actual)))
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
                 .andReturn();
         String json = mvcResult.getResponse().getContentAsString();
-        String expected = getJson(savedProduct);
-        JSONAssert.assertEquals(expected, json, false);
+        Product returned = readJson(json, Product.class);
+        actual.setId(returned.getId());
+        Assert.assertEquals(actual, returned);
+        Assert.assertEquals(Arrays.asList(DEFAULT_PRODUCT1, DEFAULT_PRODUCT2, DEFAULT_PRODUCT3, returned), service.getAll(DEFAULT_ID));
     }
 
     @Test
     public void testGetNotFound() throws Exception {
-        given(service.get(HARDWARE3.getId())).willThrow(new NotFoundException("Cannot find product"));
-        MvcResult mvcResult = mockMvc.perform(get(REST_URL + HARDWARE3.getId()))
+        mockMvc.perform(get(REST_URL + (START_SEQ + 100)))
                 .andExpect(status().isUnprocessableEntity())
                 .andDo(print())
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE))
-                .andReturn();
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE));
     }
 
     @Test
     public void testUpdateNotFound() throws Exception {
-        Product updatedProduct = new Product(NOTEBOOK2);
-        updatedProduct.setName("Updated Asus vivobook 13");
+        Product updatedProduct = new Product(DEFAULT_PRODUCT2);
+        updatedProduct.setName("Updated");
         updatedProduct.setId(START_SEQ + 100);
-        given(service.update(updatedProduct)).willThrow(new NotFoundException("Cannot find product in category"));
         mockMvc.perform(put(REST_URL + updatedProduct.getId()) //
                 .contentType(MediaType.APPLICATION_JSON_VALUE)
                 .content(getJson(updatedProduct)))
@@ -129,11 +126,9 @@ public class ProductWithoutCategoryRestControllerUnitTest {
     @Test
     public void testDeleteNotFound() throws Exception {
         int noneExistentId = START_SEQ + 100;
-        doThrow(new NotFoundException("Product is not found in category")).when(service).delete(noneExistentId);
         mockMvc.perform(delete(REST_URL + noneExistentId))
                 .andExpect(status().isUnprocessableEntity())
                 .andDo(print())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE));
     }
 }
-

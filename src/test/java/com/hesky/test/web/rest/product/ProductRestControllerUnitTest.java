@@ -1,8 +1,10 @@
 package com.hesky.test.web.rest.product;
 
-import com.hesky.test.util.exception.NotFoundException;
+import com.hesky.test.WebConfig;
 import com.hesky.test.model.Product;
 import com.hesky.test.service.ProductService;
+import com.hesky.test.util.exception.NotFoundException;
+import com.hesky.test.web.rest.ProductRestController;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.skyscreamer.jsonassert.JSONAssert;
@@ -30,9 +32,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
-@WebMvcTest({ProductRestController.class})
+@WebMvcTest(value = {ProductRestController.class}, excludeAutoConfiguration = {WebConfig.class})
 public class ProductRestControllerUnitTest {
-    private static final String REST_URL = ProductRestController.REST_URL + "/";
+    private static final String REST_URL = ProductRestController.FULL_REST_URL + "/";
     @Autowired
     private MockMvc mockMvc;
     @MockBean
@@ -138,3 +140,4 @@ public class ProductRestControllerUnitTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE));
     }
 }
+

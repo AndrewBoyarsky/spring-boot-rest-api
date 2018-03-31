@@ -2,6 +2,7 @@ package com.hesky.test.web.rest.category;
 
 import com.hesky.test.model.Category;
 import com.hesky.test.service.CategoryService;
+import com.hesky.test.web.rest.CategoryRestController;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hesky.test.CategoryTestData.*;
@@ -67,7 +69,7 @@ public class CategoryRestControllerIntegrationTest {
         mockMvc.perform(delete(REST_URL + HARDWARE_ID))
                 .andExpect(status().isOk())
                 .andDo(print());
-        Assert.assertEquals(Arrays.asList(NOTEBOOKS), service.getAll());
+        Assert.assertEquals(Arrays.asList(NOTEBOOKS,DEFAULT), service.getAll());
     }
 
     @Test
@@ -79,7 +81,7 @@ public class CategoryRestControllerIntegrationTest {
                 .content(getJson(updatedCategory)))
                 .andDo(print())
                 .andExpect(status().isOk());
-        Assert.assertEquals(Arrays.asList(updatedCategory, HARDWARE), service.getAll());
+        Assert.assertEquals(Arrays.asList(updatedCategory, HARDWARE, DEFAULT), service.getAll());
     }
 
     @Test
@@ -97,12 +99,12 @@ public class CategoryRestControllerIntegrationTest {
         Category returned = readJson(json, Category.class);
         actual.setId(returned.getId());
         Assert.assertEquals(actual, returned);
-        Assert.assertEquals(Arrays.asList(NOTEBOOKS, HARDWARE, returned), service.getAll());
+        Assert.assertEquals(Arrays.asList(NOTEBOOKS, HARDWARE, DEFAULT, returned), service.getAll());
     }
 
     @Test
     public void testFilter() throws Exception {
-        List<Category> categories = Arrays.asList(NOTEBOOKS);
+        List<Category> categories = Collections.singletonList(NOTEBOOKS);
         String queryString = "laptop";
         String json = mockMvc.perform(get(REST_URL + "filter")
                 .param("query", queryString))

@@ -1,8 +1,10 @@
 package com.hesky.test.web.rest.category;
 
+import com.hesky.test.WebConfig;
 import com.hesky.test.util.exception.NotFoundException;
 import com.hesky.test.model.Category;
 import com.hesky.test.service.CategoryService;
+import com.hesky.test.web.rest.CategoryRestController;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.skyscreamer.jsonassert.JSONAssert;
@@ -15,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hesky.test.CategoryTestData.*;
@@ -28,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @RunWith(SpringRunner.class)
-@WebMvcTest(value = {CategoryRestController.class})
+@WebMvcTest(value = {CategoryRestController.class}, excludeAutoConfiguration = {WebConfig.class})
 public class CategoryRestControllerUnitTest {
     private static final String REST_URL = CategoryRestController.REST_URL + "/";
     @Autowired
@@ -38,7 +41,7 @@ public class CategoryRestControllerUnitTest {
 
     @Test
     public void testGetAll() throws Exception {
-        List<Category> categories = Arrays.asList(NOTEBOOKS, HARDWARE);
+        List<Category> categories = Arrays.asList(NOTEBOOKS, HARDWARE, DEFAULT);
         given(service.getAll()).willReturn(categories);
         String json = mockMvc.perform(get(REST_URL))
                 .andExpect(status().isOk())
@@ -64,7 +67,7 @@ public class CategoryRestControllerUnitTest {
 
     @Test
     public void testFilter() throws Exception {
-        List<Category> categories = Arrays.asList(NOTEBOOKS);
+        List<Category> categories = Collections.singletonList(NOTEBOOKS);
         String queryString = "laptop";
         given(service.filter(queryString)).willReturn(categories);
         String json = mockMvc.perform(get(REST_URL + "filter")

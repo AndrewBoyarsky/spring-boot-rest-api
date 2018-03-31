@@ -1,4 +1,4 @@
-package com.hesky.test.web.rest.category;
+package com.hesky.test.web.rest;
 
 import com.hesky.test.model.Category;
 import com.hesky.test.service.CategoryService;
@@ -23,7 +23,7 @@ import static org.slf4j.LoggerFactory.getLogger;
 @RequestMapping(value = CategoryRestController.REST_URL, produces = MediaType.APPLICATION_JSON_VALUE)
 public class CategoryRestController {
 //    request url
-    public static final String REST_URL = "/api/category";
+    public static final String REST_URL = "/api/categories";
     private static final Logger LOG = getLogger(CategoryRestController.class);
     private CategoryService service;
 

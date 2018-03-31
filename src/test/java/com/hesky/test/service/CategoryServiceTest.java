@@ -11,10 +11,12 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hesky.test.CategoryTestData.*;
 import static com.hesky.test.model.BaseEntity.START_SEQ;
+
 @SpringBootTest
 @RunWith(SpringRunner.class)
 @Sql(scripts = {"classpath:db/data.sql"})
@@ -31,7 +33,7 @@ public class CategoryServiceTest {
     @Test
     public void testGetAll() {
         List<Category> categories = service.getAll();
-        Assert.assertEquals(Arrays.asList(NOTEBOOKS, HARDWARE), categories);
+        Assert.assertEquals(Arrays.asList(NOTEBOOKS, HARDWARE, DEFAULT), categories);
     }
 
     @Test
@@ -39,16 +41,16 @@ public class CategoryServiceTest {
         List<Category> categories1 = service.filter("Note");
         List<Category> categories2 = service.filter("books");
         List<Category> categories3 = service.filter("laptop");
-        Assert.assertEquals(Arrays.asList(NOTEBOOKS), categories1);
-        Assert.assertEquals(Arrays.asList(NOTEBOOKS), categories2);
-        Assert.assertEquals(Arrays.asList(NOTEBOOKS), categories3);
+        Assert.assertEquals(Collections.singletonList(NOTEBOOKS), categories1);
+        Assert.assertEquals(Collections.singletonList(NOTEBOOKS), categories2);
+        Assert.assertEquals(Collections.singletonList(NOTEBOOKS), categories3);
     }
 
     @Test
     public void testSave() {
         Category newItem = new Category(null, "Hardware", "hardware description", 0);
         Category savedCategory = service.save(newItem);
-        Assert.assertEquals(Arrays.asList(NOTEBOOKS, HARDWARE, savedCategory), service.getAll());
+        Assert.assertEquals(Arrays.asList(NOTEBOOKS, HARDWARE, DEFAULT, savedCategory), service.getAll());
     }
 
     @Test
@@ -56,13 +58,13 @@ public class CategoryServiceTest {
         Category updated = new Category(HARDWARE);
         updated.setName("PC Hardware");
         service.update(updated);
-        Assert.assertEquals(Arrays.asList(NOTEBOOKS, updated), service.getAll());
+        Assert.assertEquals(Arrays.asList(NOTEBOOKS, updated, DEFAULT), service.getAll());
     }
 
     @Test
     public void testDelete() {
         service.delete(HARDWARE_ID);
-        Assert.assertEquals(Arrays.asList(NOTEBOOKS), service.getAll());
+        Assert.assertEquals(Arrays.asList(NOTEBOOKS, DEFAULT), service.getAll());
     }
 
     @Test(expected = NotFoundException.class)
