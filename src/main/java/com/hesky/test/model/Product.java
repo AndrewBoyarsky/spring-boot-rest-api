@@ -18,7 +18,7 @@ import java.util.Objects;
 @Entity
 @Table(name = "products", uniqueConstraints = {@UniqueConstraint(columnNames = "name", name = "products_unique_name_idx")})
 public class Product extends BaseEntity {
-    public static final int DEFAULT_CATEGORY_ID = 0;
+    public static final int DEFAULT_CATEGORY_ID = 100002;
     @NotNull
     @Column(name = "price", nullable = false)
     @Range //by default >= 0

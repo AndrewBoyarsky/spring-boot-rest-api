@@ -24,10 +24,8 @@ public class WebConfig {
     @Configuration
     public static class WebApplicationConfig extends WebMvcConfigurationSupport {
 
-        private final RequestStatisticsInterceptor requestStatisticsInterceptor;
-
         @Autowired
-        public WebApplicationConfig(RequestStatisticsInterceptor requestStatisticsInterceptor) {this.requestStatisticsInterceptor = requestStatisticsInterceptor;}
+        private RequestStatisticsInterceptor requestStatisticsInterceptor;
 
         @Bean
         public RequestStatisticsInterceptor requestStatisticsInterceptor() {
